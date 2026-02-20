@@ -1,0 +1,44 @@
+\documentclass[tikz, border=10pt]{standalone}
+\usepackage{tikz}
+\usepackage{tkz-euclide}
+\usetikzlibrary{angles, quotes}
+
+\begin{document}
+\begin{tikzpicture}
+
+  % Définition des points
+  \tkzDefPoint(0,0){A}
+  \tkzDefPoint(4,0){B}
+  \tkzDefPoint(0,3){C}
+
+  % Tracé du triangle
+  \tkzDrawPolygon(A,B,C)
+
+  % Angle droit en A
+  \tkzMarkRightAngle[size=0.3](C,A,B)
+
+  % Marques d'angles
+  \tkzMarkAngle[size=0.8](C,B,A)
+  \tkzLabelAngle[pos=1.1](C,B,A){$\beta$}
+
+  \tkzMarkAngle[size=0.8](A,C,B)
+  \tkzLabelAngle[pos=1.1](A,C,B){$\gamma$}
+
+  % Labels des points
+  \tkzLabelPoint[below left, red](A){$A$}
+  \tkzLabelPoint[below right, red](B){$B$}
+  \tkzLabelPoint[above left, red](C){$C$}
+
+  % Hauteur issue de A
+  \tkzDefPointBy[projection=onto B--C](A) \tkzGetPoint{H}
+  \tkzDrawSegment[dashed](A,H)
+  \tkzMarkRightAngle[size=0.2](A,H,B)
+  \tkzLabelPoint[above right, red](H){$H$}
+
+  % Labels des côtés
+  \tkzLabelSegment[below](A,B){$c$}
+  \tkzLabelSegment[left](A,C){$b$}
+  \tkzLabelSegment[right=3pt](B,C){$a$}
+
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,63 @@
+\documentclass[tikz, border=10pt]{standalone}
+\usepackage{iftex}
+\ifluatex
+  \usepackage{fontspec}
+  \usepackage{unicode-math}
+  \setmathfont{TeX Gyre Pagella Math}
+\else
+  \usepackage{newpxmath}
+\fi
+
+\newcommand{\semihuge}{\fontsize{22}{26}\selectfont}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+
+\begin{document}
+\begin{tikzpicture}
+\begin{axis}[
+  width=14cm,
+  height=10cm,
+  xmin=0, xmax=6.2832,
+  ymin=-3, ymax=3,
+  % X ticks every pi/4
+  xtick={
+    0,
+    0.7854,  % pi/4
+    1.5708,  % pi/2
+    2.3562,  % 3pi/4
+    3.1416,  % pi
+    3.9270,  % 5pi/4
+    4.7124,  % 3pi/2
+    5.4978,  % 7pi/4
+    6.2832   % 2pi
+  },
+  xticklabels={
+    $0$,
+    $\frac{\pi}{4}$,
+    $\frac{\pi}{2}$,
+    $\frac{3\pi}{4}$,
+    $\pi$,
+    $\frac{5\pi}{4}$,
+    $\frac{3\pi}{2}$,
+    $\frac{7\pi}{4}$,
+    $2\pi$
+  },
+  xticklabel style={font=\semihuge, white},
+  % Y ticks every unit
+  ytick={-3,-2,-1,0,1,2,3},
+  yticklabel style={font=\LARGE, white},
+  % Grid
+  grid=major,
+  grid style={white!40!black, thin},
+  % Axes
+  axis lines=center,
+  axis line style={-stealth, thin, white},
+  xlabel={\huge$x$},
+  ylabel={\huge$y$},
+  xlabel style={at={(axis cs:6.5,0)}, anchor=west, white},
+  ylabel style={at={(axis cs:0,3.3)}, anchor=south, white},
+]
+  \addplot[red, thick, domain=0:6.2832, samples=200] {sin(deg(x))};
+\end{axis}
+\end{tikzpicture}
+\end{document}

@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>sinusoid</title>
+  <style>
+    body {
+      margin: 0;
+      background: #1e1e2e;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      font-family: monospace;
+      color: #cdd6f4;
+      gap: 2rem;
+    }
+    .label { opacity: 0.5; font-size: 0.75rem; }
+    button {
+      background: none;
+      border: 1px solid currentColor;
+      color: #cdd6f4;
+      border-radius: 4px;
+      padding: 2px 8px;
+      font-family: monospace;
+      font-size: 0.7rem;
+      cursor: pointer;
+      opacity: 0.4;
+    }
+    button:hover { opacity: 0.8; }
+    img { display: block; max-width: 90vw; max-height: 80vh; outline: 1px solid rgba(128,128,128,0.4); }
+  </style>
+</head>
+<body>
+  <div style="display:flex; align-items:center; gap:0.5rem;">
+    <span class="label">sinusoid.svg</span>
+    <button onclick="navigator.clipboard.writeText('/home/paul/tikz-studio/out/algebra/sinusoid.svg')">copy path</button>
+  </div>
+  <img src="algebra/sinusoid.svg" />
+</body>
+</html>
