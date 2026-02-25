@@ -1,0 +1,181 @@
+\documentclass[tikz, border=10pt]{standalone}
+\usepackage{iftex}
+\ifluatex
+  \usepackage{fontspec}
+  \usepackage{unicode-math}
+  \setmainfont{Fira Sans}
+  \setmonofont{Fira Mono}
+  \setmathfont{Fira Math}
+  % Fallback only for set-difference glyphs missing in Fira Math.
+  \setmathfont{STIX Two Math}[range={"29F5,"2216}]
+\else
+  \usepackage[T1]{fontenc}
+  \usepackage{newtxtext}
+  \usepackage{newtxmath}
+\fi
+
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta, positioning, calc}
+\tikzset{every node/.style={font=\Large}}
+\newcommand{\SetDiff}{\mathbin{\setminus}}
+\newcommand{\MoreData}{\ldots}
+\edef\MoreDataExpanded{\MoreData}
+
+% Theme toggle: set \darkbgfalse for light background preview.
+\newif\ifdarkbg
+\darkbgtrue
+\ifdarkbg
+  \colorlet{setoutline}{white}
+  \colorlet{setlabel}{white}
+  \colorlet{pointcol}{white}
+  \def\DefaultPointLabelColor{green!85!white}
+  \colorlet{arrowcol}{cyan!85!white}
+\else
+  \colorlet{setoutline}{black}
+  \colorlet{setlabel}{black}
+  \colorlet{pointcol}{black}
+  \def\DefaultPointLabelColor{blue!70!black}
+  \colorlet{arrowcol}{blue!70!black}
+\fi
+
+% -----------------------------
+% Data model (edit only here)
+% -----------------------------
+% Vertical spread interval for automatic point positioning.
+% Increase magnitude to spread points more (example: -1.4 and 1.4).
+\def\PointLabelColor{\DefaultPointLabelColor}
+\def\PointYMin{-1.4}
+\def\PointYMax{1.4}
+\def\SetEllipseXRadius{1.35}
+\def\SetEllipseYRadius{2.2}
+% Global vertical gap between each set and its name label.
+\def\SetNameGap{0.6}
+% Set names.
+\def\DomainName{$\mathbb{R}$}
+\def\CodomainName{$\mathbb{R}\SetDiff\{1\}$}
+% Function expression (top-center by default).
+\def\FunctionExpr{$x\mapsto\dfrac{1}{x-1}$}
+\def\FunctionExprY{\SetEllipseYRadius+0.05}
+% Horizontal point offsets for better label space.
+\def\DomainPointXShift{0.40}
+\def\CodomainPointXShift{0.40}
+
+% Format: id/label
+% Use \MoreData as label to show "..." instead of a point+side-label.
+\def\DomainPoints{
+  a1/1,
+  a2/\MoreData,
+  a3/6
+}
+
+% Format: id/label
+% Use \MoreData as label to show "..." instead of a point+side-label.
+\def\CodomainPoints{
+  b1/8,
+  b2/-2,
+  b3/\MoreData,
+  b4/7
+}
+
+% Format: sourceId/targetId/arrowLabel
+% Use {} for arrows without label text.
+% Arrows involving \MoreData endpoints are ignored automatically.
+\def\FunctionLinks{
+  a1/b1/{},
+  a3/b4/{},
+  a3/b2/{f}
+}
+
+% Apply global point-label color to both domain and codomain labels.
+\colorlet{pointlabel}{\PointLabelColor}
+% Optional per-point overrides by id:
+%   \SetPointLabelColor{a2}{yellow}
+%   \SetPointLabelColor{b4}{orange!90!white}
+\newcommand{\SetPointLabelColor}[2]{%
+  \expandafter\def\csname pointlabelcolor@#1\endcsname{#2}%
+}
+
+% Count points so they can be spaced automatically in [PointYMin, PointYMax].
+\newcount\DomainCount
+\DomainCount=0
+\foreach \id/\lbl in \DomainPoints {
+  \global\advance\DomainCount by 1
+}
+
+\newcount\CodomainCount
+\CodomainCount=0
+\foreach \id/\lbl in \CodomainPoints {
+  \global\advance\CodomainCount by 1
+}
+
+\begin{document}
+\begin{tikzpicture}[>=Stealth]
+
+% Domain A
+\draw[thick, setoutline] (2,0) ellipse [x radius=\SetEllipseXRadius, y radius=\SetEllipseYRadius];
+\node[text=setlabel] at (2,\SetEllipseYRadius+\SetNameGap) {\DomainName};
+
+% Codomain B
+\draw[thick, setoutline] (9,0) ellipse [x radius=\SetEllipseXRadius, y radius=\SetEllipseYRadius];
+\node[text=setlabel] at (9,\SetEllipseYRadius+\SetNameGap) {\CodomainName};
+\node[text=arrowcol] at (5.5,\FunctionExprY) {\FunctionExpr};
+
+% Points in A (from data)
+\foreach \id/\lbl [count=\i from 1] in \DomainPoints {
+  \ifnum\DomainCount=1
+    \pgfmathsetmacro{\y}{0.5*(\PointYMin+\PointYMax)}
+  \else
+    \pgfmathsetmacro{\y}{\PointYMax - (\PointYMax-\PointYMin)*(\i-1)/(\the\DomainCount-1)}
+  \fi
+  \def\thispointlabelcolor{pointlabel}
+  \ifcsname pointlabelcolor@\id\endcsname
+    \edef\thispointlabelcolor{\csname pointlabelcolor@\id\endcsname}
+  \fi
+  \edef\thislabel{\lbl}
+  \ifx\thislabel\MoreDataExpanded
+    \expandafter\def\csname isellipsis@\id\endcsname{1}
+    \coordinate (\id) at (2,\y);
+    \node[text=\thispointlabelcolor] at (\id) {$\MoreData$};
+  \else
+    \node[circle, fill=pointcol, inner sep=1.7pt] (\id) at (2+\DomainPointXShift,\y) {};
+    \node[left=8pt, text=\thispointlabelcolor] at (\id) {$\lbl$};
+  \fi
+}
+
+% Points in B (from data)
+\foreach \id/\lbl [count=\i from 1] in \CodomainPoints {
+  \ifnum\CodomainCount=1
+    \pgfmathsetmacro{\y}{0.5*(\PointYMin+\PointYMax)}
+  \else
+    \pgfmathsetmacro{\y}{\PointYMax - (\PointYMax-\PointYMin)*(\i-1)/(\the\CodomainCount-1)}
+  \fi
+  \def\thispointlabelcolor{pointlabel}
+  \ifcsname pointlabelcolor@\id\endcsname
+    \edef\thispointlabelcolor{\csname pointlabelcolor@\id\endcsname}
+  \fi
+  \edef\thislabel{\lbl}
+  \ifx\thislabel\MoreDataExpanded
+    \expandafter\def\csname isellipsis@\id\endcsname{1}
+    \coordinate (\id) at (9,\y);
+    \node[text=\thispointlabelcolor] at (\id) {$\MoreData$};
+  \else
+    \node[circle, fill=pointcol, inner sep=1.7pt] (\id) at (9-\CodomainPointXShift,\y) {};
+    \node[right=8pt, text=\thispointlabelcolor] at (\id) {$\lbl$};
+  \fi
+}
+
+% Function arrows (from data)
+\foreach \src/\dst/\flabel in \FunctionLinks {
+  \ifcsname isellipsis@\src\endcsname
+  \else
+    \ifcsname isellipsis@\dst\endcsname
+    \else
+      \draw[->, thick, arrowcol] (\src) -- (\dst)
+        node[midway, above, text=arrowcol] {$\flabel$};
+    \fi
+  \fi
+}
+
+\end{tikzpicture}
+\end{document}
