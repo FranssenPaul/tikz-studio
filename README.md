@@ -137,6 +137,17 @@ The build script generates `out/preview.html` on every build.
 
 **With `--watch`:** every `Ctrl+S` on the `.tex` file triggers a rebuild → preview updates automatically in the browser. Zero manual steps.
 
+### `--watch` troubleshooting
+
+- `--watch` keeps the terminal attached on purpose (it waits for file changes). Stop it with `Ctrl+C`.
+- If it seems frozen, check your `.tex` syntax first (a missing `;` in TikZ can keep `pdflatex` running).
+- If a stale watch/build process remains, stop it with:
+
+```bash
+pkill -f "build.sh --watch <path/to/file.tex>"
+pkill -f "pdflatex .*<path/to/file.tex>"
+```
+
 ---
 
 ## Color Inversion

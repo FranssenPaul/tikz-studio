@@ -1,0 +1,77 @@
+\documentclass[tikz, border=10pt]{standalone}
+\usepackage{iftex}
+\ifluatex
+  \usepackage{fontspec}
+  \usepackage{unicode-math}
+  \setmainfont{Fira Sans}
+  \setmonofont{Fira Mono}
+  \setmathfont{Fira Math}
+\else
+  \usepackage{newpxmath}
+\fi
+
+\usetikzlibrary{arrows.meta, calc}
+\tikzset{every node/.style={font=\Large}}
+
+
+\begin{document}
+\begin{tikzpicture}[scale=1.1, >=Stealth]
+  % Bounding box fixe (taille originale)
+  \path[use as bounding box] (-0.5,-0.5) rectangle (5.5,5.5);
+
+  % Colors tuned for dark preview background.
+  \colorlet{axiscol}{white}
+  \colorlet{gridcol}{white!50!black}
+  \colorlet{datacol}{green!85!white}
+  \colorlet{unknowcol}{red!85!white}
+  \colorlet{vecbasiscol}{cyan!85!white}
+
+  % Cartesian grid.
+  \draw[step=1, very thin, gridcol] (-0.5,-0.5) grid (5.5,5.5);
+
+  % Axes of the frame (O, i, j).
+  % \draw[->, thick, axiscol] (-0.3,0) -- (5.6,0) node[below right, text=axiscol] {$x$};
+  % \draw[->, thick, axiscol] (0,-0.3) -- (0,4.6) node[above left, text=axiscol] {$y$};
+
+  % Basis vectors.
+  \draw[->, very thick, vecbasiscol] (0,0) -- (1,0)
+    node[midway, below, text=vecbasiscol] {$\vec{1_x}$};
+  \draw[->, very thick, vecbasiscol] (0,0) -- (0,1)
+    node[midway, left, text=vecbasiscol] {$\vec{1_y}$};
+
+  % Vector and its endpoint.
+  \coordinate (F) at (4,0);
+  \coordinate (E) at (1,5);
+  \coordinate (O) at (0,0);
+  \coordinate (P) at (131/50,23/10);
+  
+  % \draw[->, ultra thick, datacol] (A) -- (B);
+    % node[midway, above left, text=datacol] {$\vec{u}$};
+
+  % % Component projections.
+  % \draw[dashed, thick, axiscol] (A) -- (4,0);
+  % \draw[dashed, thick, axiscol] (A) -- (0,3);
+
+  % Points and labels.
+  \fill[axiscol] (O) circle (1.8pt);
+  \fill[datacol] (F) circle (2pt);
+  \fill[datacol] (E) circle (2pt);
+  
+  
+  \node[below left, text=axiscol] at (O) {$O$};
+  \node[above right, text=datacol] at (F) {$F$};
+  \node[above right, text=datacol] at (E) {$E$};
+  \node[above right, text=unknowcol] at (P) {$P(x,\frac{23}{10})$};
+
+  % Droite EF "infinie" mais coupée dans le cadre
+  \begin{scope}
+    \clip (-0.5,-0.5) rectangle (5.5,5.5);
+    \draw[ultra thick, datacol] ($(E)!-10!(F)$) -- ($(E)!10!(F)$);
+  \end{scope}
+
+  \fill[unknowcol] (P) circle (2pt);
+
+  
+ 
+\end{tikzpicture}
+\end{document}
