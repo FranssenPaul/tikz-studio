@@ -1,0 +1,9 @@
+.git
+.vscode
+out
+**/*.log
+**/*.aux
+**/*.pdf
+**/*.fls
+**/*.fdb_latexmk
+**/*.synctex.gz

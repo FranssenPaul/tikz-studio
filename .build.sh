@@ -1,8 +1,7 @@
 #!/bin/bash
-# Usage: ./.build.sh [--dark|--light] [--invert] [--watch] [--lualatex] <path/to/file.tex>
+# Usage: ./.build.sh [--dark|--light] [--watch] [--lualatex] <path/to/file.tex>
 
 MODE="dark"
-INVERT=0
 WATCH=0
 ENGINE="pdflatex"
 INPUT=""
@@ -11,15 +10,24 @@ for arg in "$@"; do
   case $arg in
     --dark)     MODE="dark" ;;
     --light)    MODE="light" ;;
-    --invert)   INVERT=1 ;;
     --watch)    WATCH=1 ;;
     --lualatex) ENGINE="lualatex" ;;
+    --invert)
+      echo "❌ Option removed: --invert is no longer supported"
+      echo "Usage: $0 [--dark|--light] [--watch] [--lualatex] <path/to/file.tex>"
+      exit 1
+      ;;
+    --*)
+      echo "❌ Unknown option: $arg"
+      echo "Usage: $0 [--dark|--light] [--watch] [--lualatex] <path/to/file.tex>"
+      exit 1
+      ;;
     *)          INPUT="$arg" ;;
   esac
 done
 
 if [ -z "$INPUT" ]; then
-    echo "Usage: $0 [--dark|--light] [--invert] [--watch] [--lualatex] <path/to/file.tex>"
+    echo "Usage: $0 [--dark|--light] [--watch] [--lualatex] <path/to/file.tex>"
     exit 1
 fi
 
@@ -32,6 +40,8 @@ SRC="$INPUT"
 REL="${INPUT#figures/}"
 OUT_DIR="out/$(dirname "$REL")"
 NAME=$(basename "$REL" .tex)
+PROJECT_ROOT="${HOST_PROJECT_ROOT:-$(pwd)}"
+PROJECT_ROOT="${PROJECT_ROOT%/}"
 
 mkdir -p "$OUT_DIR"
 
@@ -70,22 +80,8 @@ do_build() {
            "$(dirname "$SRC")/$NAME.fdb_latexmk" \
            "$(dirname "$SRC")/$NAME.synctex.gz"
 
-    # Generate inverted SVG and remove the original
-    if [ "$INVERT" -eq 1 ]; then
-        python3 -c "
-import re
-content = open('$OUT_DIR/$NAME.svg').read()
-style = '<style>svg{filter:invert(1) hue-rotate(180deg)}</style>'
-result = re.sub(r'(<svg[^>]*>)', r'\1' + style, content, count=1)
-open('$OUT_DIR/${NAME}-invert.svg', 'w').write(result)
-"
-        rm -f "$OUT_DIR/$NAME.svg"
-        echo "✅ $OUT_DIR/${NAME}-invert.svg"
-        SVG_REL="${OUT_DIR#out/}/${NAME}-invert.svg"
-    else
-        echo "✅ $OUT_DIR/$NAME.svg"
-        SVG_REL="${OUT_DIR#out/}/$NAME.svg"
-    fi
+    echo "✅ $OUT_DIR/$NAME.svg"
+    SVG_REL="${OUT_DIR#out/}/$NAME.svg"
 
     cat > "out/preview.html" << EOF
 <!DOCTYPE html>
@@ -104,7 +100,7 @@ open('$OUT_DIR/${NAME}-invert.svg', 'w').write(result)
       min-height: 100vh;
       font-family: monospace;
       color: $TEXT_COLOR;
-      gap: 2rem;
+      gap: 0.75rem;
     }
     .label { opacity: 0.5; font-size: 0.75rem; }
     button {
@@ -119,13 +115,20 @@ open('$OUT_DIR/${NAME}-invert.svg', 'w').write(result)
       opacity: 0.4;
     }
     button:hover { opacity: 0.8; }
-    img { display: block; max-width: 90vw; max-height: 80vh; outline: 1px solid rgba(128,128,128,0.4); }
+    img {
+      display: block;
+      width: 95vw;
+      height: calc(100vh - 5rem);
+      max-height: 95vh;
+      object-fit: contain;
+      outline: 1px solid rgba(128,128,128,0.4);
+    }
   </style>
 </head>
 <body>
   <div style="display:flex; align-items:center; gap:0.5rem;">
     <span class="label">$NAME.svg</span>
-    <button onclick="navigator.clipboard.writeText('$(pwd)/out/$SVG_REL')">copy path</button>
+    <button onclick="navigator.clipboard.writeText('$PROJECT_ROOT/out/$SVG_REL')">copy path</button>
   </div>
   <img src="$SVG_REL" />
 </body>

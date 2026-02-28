@@ -1,0 +1,19 @@
+services:
+  tikz:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: tikz-studio:local
+    working_dir: /workspace
+    volumes:
+      - .:/workspace
+    environment:
+      OPEN_PREVIEW: "0"
+      HOME: "/tmp"
+      XDG_CACHE_HOME: "/tmp/.cache"
+      TEXMFVAR: "/tmp/texmf-var"
+      TEXMFCACHE: "/tmp/texmf-var"
+      HOST_PROJECT_ROOT: "${HOST_PROJECT_ROOT:-/workspace}"
+    user: "${LOCAL_UID:-1000}:${LOCAL_GID:-1000}"
+    stdin_open: true
+    tty: true

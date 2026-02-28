@@ -3,6 +3,19 @@
 \usepackage{tkz-euclide}
 \usetikzlibrary{angles, quotes}
 
+% ── Color settings ──────────────────────────────────────────────────────────
+\newif\ifwhite
+\whitefalse   % ← change to \whitefalse for black strokes/labels
+
+\ifwhite
+  \colorlet{strokecolor}{white}
+  \colorlet{labelcolor}{white}
+\else
+  \colorlet{strokecolor}{black}
+  \colorlet{labelcolor}{black}
+\fi
+% ────────────────────────────────────────────────────────────────────────────
+
 \begin{document}
 \begin{tikzpicture}
 
@@ -12,33 +25,33 @@
   \tkzDefPoint(0,3){C}
 
   % Tracé du triangle
-  \tkzDrawPolygon(A,B,C)
+  \tkzDrawPolygon[color=strokecolor](A,B,C)
 
   % Angle droit en A
-  \tkzMarkRightAngle[size=0.3](C,A,B)
+  \tkzMarkRightAngle[size=0.3, color=strokecolor](C,A,B)
 
   % Marques d'angles
-  \tkzMarkAngle[size=0.8](C,B,A)
-  \tkzLabelAngle[pos=1.1](C,B,A){$\beta$}
+  \tkzMarkAngle[size=0.8, color=strokecolor](C,B,A)
+  \tkzLabelAngle[pos=1.1, color=labelcolor](C,B,A){$\beta$}
 
-  \tkzMarkAngle[size=0.8](A,C,B)
-  \tkzLabelAngle[pos=1.1](A,C,B){$\gamma$}
+  \tkzMarkAngle[size=0.8, color=strokecolor](A,C,B)
+  \tkzLabelAngle[pos=1.1, color=labelcolor](A,C,B){$\gamma$}
 
-  % Labels des points
+  % Labels des points (toujours en rouge)
   \tkzLabelPoint[below left, red](A){$A$}
   \tkzLabelPoint[below right, red](B){$B$}
   \tkzLabelPoint[above left, red](C){$C$}
 
   % Hauteur issue de A
   \tkzDefPointBy[projection=onto B--C](A) \tkzGetPoint{H}
-  \tkzDrawSegment[dashed](A,H)
-  \tkzMarkRightAngle[size=0.2](A,H,B)
+  \tkzDrawSegment[dashed, color=strokecolor](A,H)
+  \tkzMarkRightAngle[size=0.2, color=strokecolor](A,H,B)
   \tkzLabelPoint[above right, red](H){$H$}
 
   % Labels des côtés
-  \tkzLabelSegment[below](A,B){$c$}
-  \tkzLabelSegment[left](A,C){$b$}
-  \tkzLabelSegment[right=3pt](B,C){$a$}
+  \tkzLabelSegment[below, color=labelcolor](A,B){$c$}
+  \tkzLabelSegment[left, color=labelcolor](A,C){$b$}
+  \tkzLabelSegment[right=3pt, color=labelcolor](B,C){$a$}
 
 \end{tikzpicture}
 \end{document}
