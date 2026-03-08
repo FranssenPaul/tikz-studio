@@ -68,6 +68,12 @@ do_build() {
         return 1
     fi
 
+    # Normalize root <svg> dimensions for responsive <img> usage (viewBox-only sizing)
+    if ! perl -0777 -i -pe "s{(<svg\b[^>]*?)\s+width=(['\"]).*?\2([^>]*?>)}{\$1\$3}s; s{(<svg\b[^>]*?)\s+height=(['\"]).*?\2([^>]*?>)}{\$1\$3}s" "$OUT_DIR/$NAME.svg"; then
+      echo "❌ Failed to normalize SVG root dimensions"
+      return 1
+    fi
+
     # Clean up intermediate files in out/ and source directory
     rm -f "$OUT_DIR/$NAME.pdf" \
            "$OUT_DIR/$NAME.aux" \

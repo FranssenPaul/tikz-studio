@@ -9,6 +9,7 @@ This project is designed to run through Docker. You do not need a local TeX Live
 - Reproducible TeX environment across machines
 - `.tex` source in `figures/`
 - Generated SVG output in `out/`
+- SVG root normalized to `viewBox`-only sizing (no fixed `width`/`height`) for responsive `<img>` embedding
 - Optional watch mode for rebuild on save
 - `pdflatex` and `lualatex` support
 
