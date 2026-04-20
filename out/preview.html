@@ -1,49 +1,204 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>function-10</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>parabola-racines-point-1</title>
   <style>
+    :root {
+      --page-bg: #1e1e2e;
+      --page-text: #cdd6f4;
+      --card-border: rgba(128, 128, 128, 0.32);
+      --card-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+      --dark-bg: #1e1e2e;
+      --dark-text: #cdd6f4;
+      --light-bg: #ffffff;
+      --light-text: #222222;
+      --button-bg: rgba(255, 255, 255, 0.08);
+      --button-border: rgba(255, 255, 255, 0.18);
+      --button-light-bg: rgba(0, 0, 0, 0.04);
+      --button-light-border: rgba(0, 0, 0, 0.12);
+    }
     body {
       margin: 0;
-      background: #f8f8f8;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       min-height: 100vh;
+      background: var(--page-bg);
+      color: var(--page-text);
       font-family: monospace;
-      color: #333333;
-      gap: 0.75rem;
+      padding: 24px;
+      box-sizing: border-box;
     }
-    .label { opacity: 0.5; font-size: 0.75rem; }
-    button {
-      background: none;
-      border: 1px solid currentColor;
-      color: #333333;
+    .page {
+      width: min(1400px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .page-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .title {
+      opacity: 0.75;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      align-items: start;
+    }
+    .card {
       border-radius: 4px;
-      padding: 2px 8px;
-      font-family: monospace;
-      font-size: 0.7rem;
-      cursor: pointer;
-      opacity: 0.4;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
     }
-    button:hover { opacity: 0.8; }
+    .card.dark {
+      background: var(--dark-bg);
+      color: var(--dark-text);
+    }
+    .card.light {
+      background: var(--light-bg);
+      color: var(--light-text);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .meta {
+      display: grid;
+      gap: 4px;
+    }
+    .variant {
+      font-size: 0.72rem;
+      opacity: 0.65;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .label {
+      opacity: 0.9;
+      font-size: 0.8rem;
+      word-break: break-all;
+    }
+    button {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: opacity 120ms ease, transform 120ms ease;
+    }
+    .page-actions button {
+      background: var(--button-bg);
+      border: 1px solid var(--button-border);
+      color: var(--page-text);
+    }
+    .card.dark button {
+      background: var(--button-bg);
+      border: 1px solid var(--button-border);
+      color: var(--dark-text);
+    }
+    .card.light button {
+      background: var(--button-light-bg);
+      border: 1px solid var(--button-light-border);
+      color: var(--light-text);
+    }
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .figure-wrap {
+      padding: 18px;
+    }
+    .figure-surface {
+      display: block;
+      width: 100%;
+      min-height: 300px;
+      border-radius: 6px;
+      outline: 1px solid rgba(128,128,128,0.4);
+      box-sizing: border-box;
+    }
+    .card.dark .figure-surface {
+      background: var(--dark-bg);
+    }
+    .card.light .figure-surface {
+      background: var(--light-bg);
+    }
     img {
       display: block;
-      width: 95vw;
-      height: calc(100vh - 5rem);
-      max-height: 95vh;
+      width: 100%;
+      height: auto;
+      max-height: 72vh;
       object-fit: contain;
-      outline: 1px solid rgba(128,128,128,0.4);
+    }
+    @media (max-width: 720px) {
+      body {
+        padding: 14px;
+      }
+      .page-header {
+        align-items: start;
+        flex-direction: column;
+      }
+      .card-header {
+        align-items: start;
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
-  <div style="display:flex; align-items:center; gap:0.5rem;">
-    <span class="label">function-10.svg</span>
-    <button onclick="navigator.clipboard.writeText('/home/franssen/tikz-studio/out/algebra/function-10.svg')">copy path</button>
+  <div class="page">
+    <div class="page-header">
+      <div class="title">parabola-racines-point-1</div>
+      <div class="page-actions">
+        <button onclick="navigator.clipboard.writeText('cp &quot;/home/paul/projects/tikz-studio/out/algebra/parabola-racines-point-1.svg&quot; &quot;/home/paul/projects/tikz-studio/out/algebra/parabola-racines-point-1-light.svg&quot; ./')">copy cp ./</button>
+      </div>
+    </div>
+    <div class="cards">
+      <section class="card dark">
+        <div class="card-header">
+          <div class="meta">
+            <span class="variant">dark</span>
+            <span class="label">parabola-racines-point-1.svg</span>
+          </div>
+          <button onclick="navigator.clipboard.writeText('/home/paul/projects/tikz-studio/out/algebra/parabola-racines-point-1.svg')">copy path</button>
+        </div>
+        <div class="figure-wrap">
+          <div class="figure-surface">
+            <img src="algebra/parabola-racines-point-1.svg" alt="parabola-racines-point-1.svg" />
+          </div>
+        </div>
+      </section>
+      <section class="card light">
+        <div class="card-header">
+          <div class="meta">
+            <span class="variant">light</span>
+            <span class="label">parabola-racines-point-1-light.svg</span>
+          </div>
+          <button onclick="navigator.clipboard.writeText('/home/paul/projects/tikz-studio/out/algebra/parabola-racines-point-1-light.svg')">copy path</button>
+        </div>
+        <div class="figure-wrap">
+          <div class="figure-surface">
+            <img src="algebra/parabola-racines-point-1-light.svg" alt="parabola-racines-point-1-light.svg" />
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
-  <img src="algebra/function-10.svg" />
 </body>
 </html>

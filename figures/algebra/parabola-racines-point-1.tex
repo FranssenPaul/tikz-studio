@@ -1,0 +1,71 @@
+\documentclass[tikz, border=10pt]{standalone}
+\usepackage{iftex}
+\ifluatex
+  \usepackage{fontspec}
+  \usepackage{unicode-math}
+  \setmainfont{Fira Sans}
+  \setmonofont{Fira Mono}
+  \setmathfont{Fira Math}
+  \setmathfont{STIX Two Math}[range={"29F5,"2216}]
+\else
+  \usepackage[T1]{fontenc}
+\fi
+
+\usepackage{amsmath}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta}
+\tikzset{every node/.style={font=\Large}}
+
+% Theme toggle: \darkbgfalse for light background preview.
+\newif\ifdarkbg
+\darkbgtrue
+\ifdarkbg
+  \colorlet{axiscol}{white}
+  \colorlet{gridcol}{white!30!black}
+  \colorlet{ticklabelcol}{white}
+  \colorlet{funcol}{lime!90!green}
+  \colorlet{auxcol}{white!55!black}
+\else
+  \colorlet{axiscol}{black}
+  \colorlet{gridcol}{black!25!white}
+  \colorlet{ticklabelcol}{black}
+  \colorlet{funcol}{blue!70!black}
+  \colorlet{auxcol}{black!40!white}
+\fi
+
+% Parabola: y = 4/5 (x-1)(x+5)
+% Roots: (-5,0) and (1,0)
+% Point of passage: (0,-4)
+\begin{document}
+\begin{tikzpicture}[xscale=1.00, yscale=0.22, >=Stealth]
+
+  % Axes.
+  \draw[->, thick, axiscol] (-6.4,0) -- (2.6,0)
+    node[right, text=axiscol] {$x$};
+  \draw[->, thick, axiscol] (0,-8.8) -- (0,12.8)
+    node[above, text=axiscol] {$y$};
+
+  % Function curve.
+  \begin{scope}
+    \clip (-6,-8) rectangle (2,12);
+    \draw[domain=-6:2, smooth, very thick, funcol, samples=120]
+      plot (\x, {4/5*(\x-1)*(\x+5)});
+  \end{scope}
+
+  % Tick marks only at the roots.
+  \draw[axiscol] (-5,3pt) -- (-5,-3pt);
+  \node[below=6pt, text=ticklabelcol] at (-5,0) {$-5$};
+
+  \draw[axiscol] (1,3pt) -- (1,-3pt);
+  \node[below=6pt, text=ticklabelcol] at (1,0) {$1$};
+
+  \draw[axiscol] (3pt,-4) -- (-3pt,-4);
+  \node[left=6pt, text=ticklabelcol] at (0,-4) {$-4$};
+
+  % Roots shown on the curve.
+  \node[circle, fill=funcol, inner sep=2.3pt] at (-5,0) {};
+  \node[circle, fill=funcol, inner sep=2.3pt] at (1,0) {};
+  \node[circle, fill=funcol, inner sep=2.3pt] at (0,-4) {};
+
+\end{tikzpicture}
+\end{document}

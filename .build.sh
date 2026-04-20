@@ -1,25 +1,22 @@
 #!/bin/bash
-# Usage: ./.build.sh [--dark|--light] [--watch] [--lualatex] <path/to/file.tex>
+# Usage: ./.build.sh [--watch] [--lualatex] <path/to/file.tex>
 
-MODE="dark"
 WATCH=0
 ENGINE="pdflatex"
 INPUT=""
 
 for arg in "$@"; do
   case $arg in
-    --dark)     MODE="dark" ;;
-    --light)    MODE="light" ;;
     --watch)    WATCH=1 ;;
     --lualatex) ENGINE="lualatex" ;;
     --invert)
       echo "❌ Option removed: --invert is no longer supported"
-      echo "Usage: $0 [--dark|--light] [--watch] [--lualatex] <path/to/file.tex>"
+      echo "Usage: $0 [--watch] [--lualatex] <path/to/file.tex>"
       exit 1
       ;;
     --*)
       echo "❌ Unknown option: $arg"
-      echo "Usage: $0 [--dark|--light] [--watch] [--lualatex] <path/to/file.tex>"
+      echo "Usage: $0 [--watch] [--lualatex] <path/to/file.tex>"
       exit 1
       ;;
     *)          INPUT="$arg" ;;
@@ -27,7 +24,7 @@ for arg in "$@"; do
 done
 
 if [ -z "$INPUT" ]; then
-    echo "Usage: $0 [--dark|--light] [--watch] [--lualatex] <path/to/file.tex>"
+    echo "Usage: $0 [--watch] [--lualatex] <path/to/file.tex>"
     exit 1
 fi
 
@@ -40,106 +37,304 @@ SRC="$INPUT"
 REL="${INPUT#figures/}"
 OUT_DIR="out/$(dirname "$REL")"
 NAME=$(basename "$REL" .tex)
+BASE_NAME="${NAME%-light}"
+BASE_NAME="${BASE_NAME%-dark}"
 PROJECT_ROOT="${HOST_PROJECT_ROOT:-$(pwd)}"
 PROJECT_ROOT="${PROJECT_ROOT%/}"
+DARK_OUT_NAME="$BASE_NAME"
+LIGHT_OUT_NAME="$BASE_NAME-light"
 
 mkdir -p "$OUT_DIR"
 
-# HTML theme
-if [ "$MODE" = "dark" ]; then
-    BG_COLOR="#1e1e2e"
-    TEXT_COLOR="#cdd6f4"
-else
-    BG_COLOR="#f8f8f8"
-    TEXT_COLOR="#333333"
-fi
+cleanup_build_artifacts() {
+    local out_name="$1"
 
-do_build() {
-    # Compile PDF
-    if ! $ENGINE -interaction=nonstopmode -output-directory="$OUT_DIR" "$SRC" > /tmp/build.log 2>&1; then
-        echo "❌ $ENGINE failed:"
-        tail -20 /tmp/build.log
+    rm -f "$OUT_DIR/$out_name.pdf" \
+           "$OUT_DIR/$out_name.aux" \
+           "$OUT_DIR/$out_name.log" \
+           "$OUT_DIR/$out_name.out"
+}
+
+build_variant() {
+    local variant="$1"
+    local out_name="$2"
+    local tmp_src
+    local toggle
+    local engine_status=0
+
+    tmp_src="/tmp/${out_name}.tex"
+
+    if [ "$variant" = "dark" ]; then
+        toggle='\darkbgtrue'
+    else
+        toggle='\darkbgfalse'
+    fi
+
+    if ! awk -v toggle="$toggle" '
+        /^[ \t]*\\darkbg(true|false)[ \t]*$/ { print toggle; next }
+        { print }
+    ' "$SRC" > "$tmp_src"; then
+        echo "❌ Failed to prepare $variant variant"
+        rm -f "$tmp_src"
         return 1
     fi
 
+    if ! $ENGINE -interaction=nonstopmode -output-directory="$OUT_DIR" "$tmp_src" > /tmp/build.log 2>&1; then
+        engine_status=$?
+    fi
+
+    rm -f "$tmp_src"
+
+    if [ "$engine_status" -ne 0 ] && [ ! -f "$OUT_DIR/$out_name.pdf" ]; then
+        echo "❌ $ENGINE failed for $variant variant:"
+        tail -20 /tmp/build.log
+        cleanup_build_artifacts "$out_name"
+        return 1
+    fi
+
+    if [ "$engine_status" -ne 0 ]; then
+        echo "⚠️  $ENGINE reported issues for $variant variant, continuing with generated PDF"
+        tail -10 /tmp/build.log
+    fi
+
     # Convert to SVG
-    if ! dvisvgm --pdf "$OUT_DIR/$NAME.pdf" -o "$OUT_DIR/$NAME.svg" > /dev/null 2>&1; then
-        echo "❌ dvisvgm failed"
+    if ! dvisvgm --pdf "$OUT_DIR/$out_name.pdf" -o "$OUT_DIR/$out_name.svg" > /dev/null 2>&1; then
+        echo "❌ dvisvgm failed for $variant variant"
+        cleanup_build_artifacts "$out_name"
         return 1
     fi
 
     # Normalize root <svg> dimensions for responsive <img> usage (viewBox-only sizing)
-    if ! perl -0777 -i -pe "s{(<svg\b[^>]*?)\s+width=(['\"]).*?\2([^>]*?>)}{\$1\$3}s; s{(<svg\b[^>]*?)\s+height=(['\"]).*?\2([^>]*?>)}{\$1\$3}s" "$OUT_DIR/$NAME.svg"; then
+    if ! perl -0777 -i -pe "s{(<svg\b[^>]*?)\s+width=(['\"]).*?\2([^>]*?>)}{\$1\$3}s; s{(<svg\b[^>]*?)\s+height=(['\"]).*?\2([^>]*?>)}{\$1\$3}s" "$OUT_DIR/$out_name.svg"; then
       echo "❌ Failed to normalize SVG root dimensions"
+      cleanup_build_artifacts "$out_name"
       return 1
     fi
 
-    # Clean up intermediate files in out/ and source directory
-    rm -f "$OUT_DIR/$NAME.pdf" \
-           "$OUT_DIR/$NAME.aux" \
-           "$OUT_DIR/$NAME.log" \
-           "$OUT_DIR/$NAME.out"
-    rm -f "$(dirname "$SRC")/$NAME.aux" \
-           "$(dirname "$SRC")/$NAME.log" \
-           "$(dirname "$SRC")/$NAME.pdf" \
-           "$(dirname "$SRC")/$NAME.fls" \
-           "$(dirname "$SRC")/$NAME.fdb_latexmk" \
-           "$(dirname "$SRC")/$NAME.synctex.gz"
+    cleanup_build_artifacts "$out_name"
 
-    echo "✅ $OUT_DIR/$NAME.svg"
-    SVG_REL="${OUT_DIR#out/}/$NAME.svg"
+    echo "✅ $OUT_DIR/$out_name.svg"
+}
+
+write_preview() {
+    local dark_svg_rel="${OUT_DIR#out/}/$DARK_OUT_NAME.svg"
+    local light_svg_rel="${OUT_DIR#out/}/$LIGHT_OUT_NAME.svg"
+    local dark_svg_abs="$PROJECT_ROOT/out/$dark_svg_rel"
+    local light_svg_abs="$PROJECT_ROOT/out/$light_svg_rel"
+    local copy_cmd="cp &quot;$dark_svg_abs&quot; &quot;$light_svg_abs&quot; ./"
 
     cat > "out/preview.html" << EOF
 <!DOCTYPE html>
 <html>
 <head>
-  <meta charset="UTF-8">
-  <title>$NAME</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>$BASE_NAME</title>
   <style>
+    :root {
+      --page-bg: #1e1e2e;
+      --page-text: #cdd6f4;
+      --card-border: rgba(128, 128, 128, 0.32);
+      --card-shadow: 0 18px 50px rgba(0, 0, 0, 0.18);
+      --dark-bg: #1e1e2e;
+      --dark-text: #cdd6f4;
+      --light-bg: #ffffff;
+      --light-text: #222222;
+      --button-bg: rgba(255, 255, 255, 0.08);
+      --button-border: rgba(255, 255, 255, 0.18);
+      --button-light-bg: rgba(0, 0, 0, 0.04);
+      --button-light-border: rgba(0, 0, 0, 0.12);
+    }
     body {
       margin: 0;
-      background: $BG_COLOR;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
       min-height: 100vh;
+      background: var(--page-bg);
+      color: var(--page-text);
       font-family: monospace;
-      color: $TEXT_COLOR;
-      gap: 0.75rem;
+      padding: 24px;
+      box-sizing: border-box;
     }
-    .label { opacity: 0.5; font-size: 0.75rem; }
-    button {
-      background: none;
-      border: 1px solid currentColor;
-      color: $TEXT_COLOR;
+    .page {
+      width: min(1400px, 100%);
+      margin: 0 auto;
+      display: grid;
+      gap: 20px;
+    }
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .page-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .title {
+      opacity: 0.75;
+      font-size: 0.85rem;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .cards {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      align-items: start;
+    }
+    .card {
       border-radius: 4px;
-      padding: 2px 8px;
-      font-family: monospace;
-      font-size: 0.7rem;
-      cursor: pointer;
-      opacity: 0.4;
+      border: 1px solid var(--card-border);
+      box-shadow: var(--card-shadow);
+      overflow: hidden;
     }
-    button:hover { opacity: 0.8; }
+    .card.dark {
+      background: var(--dark-bg);
+      color: var(--dark-text);
+    }
+    .card.light {
+      background: var(--light-bg);
+      color: var(--light-text);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .meta {
+      display: grid;
+      gap: 4px;
+    }
+    .variant {
+      font-size: 0.72rem;
+      opacity: 0.65;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+    .label {
+      opacity: 0.9;
+      font-size: 0.8rem;
+      word-break: break-all;
+    }
+    button {
+      border-radius: 999px;
+      padding: 6px 12px;
+      font-family: monospace;
+      font-size: 0.75rem;
+      cursor: pointer;
+      transition: opacity 120ms ease, transform 120ms ease;
+    }
+    .page-actions button {
+      background: var(--button-bg);
+      border: 1px solid var(--button-border);
+      color: var(--page-text);
+    }
+    .card.dark button {
+      background: var(--button-bg);
+      border: 1px solid var(--button-border);
+      color: var(--dark-text);
+    }
+    .card.light button {
+      background: var(--button-light-bg);
+      border: 1px solid var(--button-light-border);
+      color: var(--light-text);
+    }
+    button:hover {
+      opacity: 0.9;
+      transform: translateY(-1px);
+    }
+    .figure-wrap {
+      padding: 18px;
+    }
+    .figure-surface {
+      display: block;
+      width: 100%;
+      min-height: 300px;
+      border-radius: 6px;
+      outline: 1px solid rgba(128,128,128,0.4);
+      box-sizing: border-box;
+    }
+    .card.dark .figure-surface {
+      background: var(--dark-bg);
+    }
+    .card.light .figure-surface {
+      background: var(--light-bg);
+    }
     img {
       display: block;
-      width: 95vw;
-      height: calc(100vh - 5rem);
-      max-height: 95vh;
+      width: 100%;
+      height: auto;
+      max-height: 72vh;
       object-fit: contain;
-      outline: 1px solid rgba(128,128,128,0.4);
+    }
+    @media (max-width: 720px) {
+      body {
+        padding: 14px;
+      }
+      .page-header {
+        align-items: start;
+        flex-direction: column;
+      }
+      .card-header {
+        align-items: start;
+        flex-direction: column;
+      }
     }
   </style>
 </head>
 <body>
-  <div style="display:flex; align-items:center; gap:0.5rem;">
-    <span class="label">$NAME.svg</span>
-    <button onclick="navigator.clipboard.writeText('$PROJECT_ROOT/out/$SVG_REL')">copy path</button>
+  <div class="page">
+    <div class="page-header">
+      <div class="title">$BASE_NAME</div>
+      <div class="page-actions">
+        <button onclick="navigator.clipboard.writeText('$copy_cmd')">copy cp ./</button>
+      </div>
+    </div>
+    <div class="cards">
+      <section class="card dark">
+        <div class="card-header">
+          <div class="meta">
+            <span class="variant">dark</span>
+            <span class="label">$DARK_OUT_NAME.svg</span>
+          </div>
+          <button onclick="navigator.clipboard.writeText('$dark_svg_abs')">copy path</button>
+        </div>
+        <div class="figure-wrap">
+          <div class="figure-surface">
+            <img src="$dark_svg_rel" alt="$DARK_OUT_NAME.svg" />
+          </div>
+        </div>
+      </section>
+      <section class="card light">
+        <div class="card-header">
+          <div class="meta">
+            <span class="variant">light</span>
+            <span class="label">$LIGHT_OUT_NAME.svg</span>
+          </div>
+          <button onclick="navigator.clipboard.writeText('$light_svg_abs')">copy path</button>
+        </div>
+        <div class="figure-wrap">
+          <div class="figure-surface">
+            <img src="$light_svg_rel" alt="$LIGHT_OUT_NAME.svg" />
+          </div>
+        </div>
+      </section>
+    </div>
   </div>
-  <img src="$SVG_REL" />
 </body>
 </html>
 EOF
+}
+
+do_build() {
+    build_variant "dark" "$DARK_OUT_NAME" || return 1
+    build_variant "light" "$LIGHT_OUT_NAME" || return 1
+    write_preview
 }
 
 # First build
